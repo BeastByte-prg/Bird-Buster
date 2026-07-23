@@ -6,7 +6,7 @@ Concepto original: 1986 (Commodore 64 / BASIC)
 Completado: 2026 (HTML5 + JavaScript con IA Claude)
 
 ## Jugar en línea
-👉 [Click aquí para jugar](https://[usuario].github.io/bird-buster/...)
+👉 [Click aquí para jugar](https://rawcdn.githack.com/BeastByte-prg/Bird-Buster/main/bird-buster-v5.0-FINAL-RELEASE.html)
 
 ## Controles
 - ⬆️⬇️⬅️➡️ Mover avión
