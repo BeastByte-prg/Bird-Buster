@@ -15,4 +15,4 @@ Completado: 2026 (HTML5 + JavaScript con IA Claude)
 - 🔊 Mutear sonido
 
 ## Donaciones
-💙 [PayPal](https://www.paypal.com/paypalme/jbertorelli@yahoo.com)
+💙 [PayPal](https://paypal.me/BeastByte)
