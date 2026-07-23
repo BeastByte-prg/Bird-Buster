@@ -100,3 +100,2171 @@ Este proyecto es de código abierto. Siéntete libre de usarlo, modificarlo y co
 ---
 
 **¡A JUGAR! ✈️🎮**
+
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════════╗
+║                           BIRD BUSTER v5.0                               ║
+║                        FINAL RELEASE - 2026                              ║
+║                                                                          ║
+║  Created by: José R. Bertorelli (BeastByte)                             ║
+║  Original Concept: 1986 (Commodore 64 / BASIC)                          ║
+║  Final Implementation: 2026 (HTML5 / JavaScript with Claude AI)         ║
+║                                                                          ║
+║  A classic arcade-style biplane shooter game                            ║
+║  Single self-contained HTML file - works offline                        ║
+║                                                                          ║
+║  Contact: beastbyte@hotmail.com                                         ║
+║  Donate: https://www.paypal.com/paypalme/jbertorelli                    ║
+╚══════════════════════════════════════════════════════════════════════════╝
+-->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="screen-orientation" content="landscape">
+    <title>Bird Buster v5.0 - FINAL RELEASE</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        /* Landscape orientation reminder (optional, not blocking) */
+        #rotateWarning {
+            display: none;
+        }
+        #gameContainer { 
+            position: relative; 
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+        }
+        canvas { 
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* This keeps proportions without distortion */
+        }
+        
+        /* Remove distortion-causing overrides */
+        @media screen and (orientation: landscape) {
+            #gameContainer {
+                width: 100vw;
+                height: 100vh;
+            }
+        }
+        #ui {
+            position: absolute; 
+            top: 5px; 
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFD700; /* Yellow/Gold */
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            /* Black stroke for better visibility */
+            text-shadow: 
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                1px 1px 0 #000,
+                0px 0px 4px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
+            padding: 5px 12px; 
+            border-radius: 8px;
+            border: 1px solid #FFD700;
+            white-space: nowrap;
+        }
+        #ui div {
+            display: inline-block;
+            margin: 0 8px;
+        }
+        #gameOver {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); color: white;
+            padding: 20px 30px; border-radius: 20px;
+            text-align: center; display: none;
+            border: 4px solid #ff4444;
+            max-height: 90vh;
+            overflow-y: auto;
+            max-width: 90vw;
+        }
+        #gameOver h1 { font-size: 48px; margin-bottom: 15px; color: #ff4444; }
+        #gameOver button {
+            margin-top: 15px; padding: 15px 40px; font-size: 20px;
+            background: #4CAF50; color: white; border: none;
+            border-radius: 10px; cursor: pointer; font-weight: bold;
+        }
+        #gameOver button:hover { background: #45a049; transform: scale(1.05); }
+        @media (max-width: 850px) {
+            #gameOver h1 { font-size: 32px; margin-bottom: 10px; }
+            #gameOver { padding: 15px 20px; }
+            #gameOver button { padding: 12px 30px; font-size: 18px; }
+            #gameOver p { font-size: 16px !important; }
+        }
+        #instructions {
+            position: absolute; bottom: 10px; left: 10px;
+            color: white; font-size: 14px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px; border-radius: 8px;
+        }
+        #touchControls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: none;
+            z-index: 100;
+        }
+        .dpad {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: grid;
+            grid-template-columns: 40px 40px 40px;
+            grid-template-rows: 40px 40px 40px;
+            gap: 0;
+        }
+        .dpad-btn {
+            background: rgba(255,255,255,0.3);
+            border: 2px solid rgba(0,0,0,0.5);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+        }
+        .dpad-btn:active {
+            background: rgba(255,255,255,0.6);
+        }
+        .dpad-btn.empty {
+            background: transparent;
+            border: none;
+        }
+        #fireBtn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255,100,100,0.6);
+            border: 3px solid rgba(255,255,255,0.8);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            user-select: none;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            z-index: 100;
+        }
+        #fireBtn:active {
+            background: rgba(255,100,100,0.8);
+            transform: scale(0.95);
+        }
+        @media (max-width: 850px) {
+            #touchControls { display: block; }
+            #fireBtn { display: flex; }
+            #instructions { display: none; }
+            #ui {
+                font-size: 14px;
+                padding: 4px 10px;
+            }
+            #ui div {
+                margin: 0 6px;
+            }
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Credits overlay - only visible on title screen -->
+        <div id="creditsOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40px); text-align: center;">
+                <p style="font-family: Courier; font-size: 20px; color: #00FF00; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                    by 
+                    <a href="mailto:beastbyte@hotmail.com" style="color: #00FF00; text-decoration: underline; pointer-events: auto; cursor: pointer;">BeastByte</a>
+                    <span id="yearLink" style="color: #00FF00; text-decoration: underline; pointer-events: auto; cursor: pointer; margin-left: 5px;">1986</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Story modal -->
+        <div id="storyModal" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.95); border: 3px solid #FFD700; border-radius: 15px; padding: 30px; max-width: 700px; width: 90%; z-index: 1000; box-shadow: 0 0 30px rgba(255,215,0,0.5);">
+            <h2 style="color: #FFD700; text-align: center; margin-top: 0; font-size: 24px;">📜 Historia de Bird Buster</h2>
+            <p style="color: #FFF; font-size: 16px; line-height: 1.6; text-align: justify;">
+                En el año 1986, tuve la idea de crear este juego mientras estudiaba en la universidad. Hice mi primer storyteller pensando en programarlo en lenguaje Basic usando mi Commodore 64 conectado al TV y usando cassettes como unidad de respaldo.
+            </p>
+            <p style="color: #FFF; font-size: 16px; line-height: 1.6; text-align: justify;">
+                Luego de más de 40 años de aquel entonces, hoy año 2026, logramos completar el código y mejorarlo usando la IA Claude con un prompt con todos los parámetros.
+            </p>
+            <p style="color: #00FF00; font-size: 16px; line-height: 1.6; text-align: center; font-weight: bold;">
+                Gracias Anthropic y su IA Claude por permitirme crear Bird Buster.
+            </p>
+            <p style="color: #FFD700; font-size: 18px; text-align: right; margin-top: 25px; font-family: 'Courier New', monospace; font-style: italic;">
+                José R. Bertorelli<br>
+                <span style="color: #00FF00; font-size: 14px;">(<a href="mailto:beastbyte@hotmail.com" style="color: #00FF00; text-decoration: underline;">BeastByte</a>)</span>
+            </p>
+            <button onclick="closeStory()" style="display: block; margin: 10px auto 0; padding: 12px 30px; background: #FFD700; color: #000; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">
+                Cerrar
+            </button>
+            <p style="color: #999; font-size: 12px; text-align: center; margin-top: 10px; font-style: italic;">
+                Presiona cualquier tecla o haz clic para cerrar
+            </p>
+        </div>
+        
+        <!-- Panic button and mute in top right corner -->
+        <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 10px; z-index: 2000;">
+            <button id="muteBtn" onclick="toggleMute()" style="background: rgba(0,0,0,0.7); color: #FFD700; border: 2px solid #FFD700; border-radius: 8px; padding: 8px 12px; font-size: 20px; cursor: pointer; transition: all 0.3s;" title="Mutear/Desmutear sonido">
+                🔊
+            </button>
+            <button onclick="panicButton()" style="background: rgba(139,0,0,0.9); color: #FFF; border: 2px solid #FF4444; border-radius: 8px; padding: 8px 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: all 0.3s;" title="¡Cerrar rápido! (Boss Key)">
+                ❌
+            </button>
+        </div>
+        
+        <div id="ui">
+            <div>🏆 <span id="score">0</span></div>
+            <div>🏅 <span id="highscore">0</span></div>
+            <div>⛽ <span id="fuel">100</span>%</div>
+        </div>
+        <div id="instructions">⬆️⬇️⬅️➡️ = Mover | ESPACIO = Disparar</div>
+        <button id="fireBtn">🔥</button>
+        <div id="touchControls">
+            <div class="dpad">
+                <div class="dpad-btn empty"></div>
+                <div class="dpad-btn" data-key="ArrowUp">⬆️</div>
+                <div class="dpad-btn empty"></div>
+                <div class="dpad-btn" data-key="ArrowLeft">⬅️</div>
+                <div class="dpad-btn empty"></div>
+                <div class="dpad-btn" data-key="ArrowRight">➡️</div>
+                <div class="dpad-btn empty"></div>
+                <div class="dpad-btn" data-key="ArrowDown">⬇️</div>
+                <div class="dpad-btn empty"></div>
+            </div>
+        </div>
+        <div id="gameOver">
+            <h1>¡GAME OVER!</h1>
+            <p style="font-size: 28px; margin: 15px 0;">Puntuación: <span id="finalScore">0</span></p>
+            <div id="top1Message" style="display:none; margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); border-radius: 15px; border: 3px solid #FF4444;">
+                <p style="font-size: 48px; margin: 0;">🏆</p>
+                <p style="font-size: 32px; font-weight: bold; color: #000; margin: 10px 0 0 0; text-shadow: 2px 2px 4px rgba(255,255,255,0.5);">¡NUEVO RÉCORD!</p>
+            </div>
+            <div id="highscoreEntry" style="display:none; margin: 20px 0;">
+                <p style="font-size: 20px; color: #FFD700; margin-bottom: 10px;">¡NUEVO RECORD! 🎉</p>
+                <p style="font-size: 16px; margin-bottom: 10px;">Ingresa tus iniciales:</p>
+                <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+                    <input type="text" id="initial1" maxlength="1" style="width: 40px; height: 50px; font-size: 28px; text-align: center; text-transform: uppercase; border: 3px solid #FFD700; border-radius: 8px; background: #222; color: white;">
+                    <input type="text" id="initial2" maxlength="1" style="width: 40px; height: 50px; font-size: 28px; text-align: center; text-transform: uppercase; border: 3px solid #FFD700; border-radius: 8px; background: #222; color: white;">
+                    <input type="text" id="initial3" maxlength="1" style="width: 40px; height: 50px; font-size: 28px; text-align: center; text-transform: uppercase; border: 3px solid #FFD700; border-radius: 8px; background: #222; color: white;">
+                </div>
+                <button onclick="saveHighScore()" style="margin-top: 15px; padding: 12px 30px; font-size: 18px; background: #FFD700; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Guardar</button>
+            </div>
+            <div id="highscoreDisplay" style="margin: 20px 0; font-size: 18px;">
+                <p style="color: #FFD700; margin-bottom: 10px;">📊 MEJORES PUNTAJES</p>
+                <div id="highscoreList"></div>
+            </div>
+            <button onclick="restartGame()">🎮 Jugar de Nuevo</button>
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #666;">
+                <p style="font-size: 14px; color: #999; margin-bottom: 8px;">¿Te gustó el juego?</p>
+                <a href="https://www.paypal.com/paypalme/jbertorelli" target="_blank" style="display: inline-block; background: #0070ba; color: white; padding: 10px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; transition: all 0.3s;">
+                    💙 Donar con PayPal
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state - MUST BE DECLARED BEFORE resizeCanvas()
+        let gameRunning = false;
+        let showTitleScreen = true;
+        let score = 0;
+        let previousHighScore = 0; // Track previous record to detect when broken
+        let recordBroken = false; // Flag to play sound only once
+        let fuel = 100;
+        let frameCount = 0;
+        let gameSpeed = 1.0;
+        let isNightMode = false;
+        let transitionProgress = 0;
+        let targetTransition = 0;
+        let previousLevel = 0; // Track level to detect day/night transitions
+        const keys = {};
+        
+        // Player
+        const player = { x: 200, y: 400, width: 70, height: 50, speed: 5 };
+        
+        // Game objects
+        const bullets = [];
+        const airBirds = [];
+        const clouds = [];
+        const trees = [];
+        const destroyedTrees = [];
+        let groundBird = null;
+        let fuelBalloon = null;
+        let lastShot = 0;
+        let activeBullet = null;
+        let explosion = null;
+        let fallingSound = null; // Track falling whistle sound
+        
+        const bulletSpeed = 10;
+        const sun = { x: 0, y: 0 };
+        
+        function updateSunPosition() {
+            if (canvas.width > canvas.height) {
+                sun.x = canvas.width - 220;
+                sun.y = 150;
+            } else {
+                sun.x = canvas.width - 150;
+                sun.y = 200;
+            }
+        }
+        
+        // Dynamic canvas sizing based on orientation
+        function resizeCanvas() {
+            const isLandscape = window.innerWidth > window.innerHeight;
+            const previousWidth = canvas.width;
+            const previousHeight = canvas.height;
+            
+            if (isLandscape) {
+                // Landscape: Wide canvas (16:9)
+                canvas.width = 1920;
+                canvas.height = 1080;
+            } else {
+                // Portrait: Tall canvas (9:16)
+                canvas.width = 1080;
+                canvas.height = 1920;
+            }
+            
+            // If canvas size changed and game is running, reinitialize
+            if ((previousWidth !== canvas.width || previousHeight !== canvas.height) && gameRunning) {
+                // Clear all game objects
+                clouds.length = 0;
+                trees.length = 0;
+                destroyedTrees.length = 0;
+                airBirds.length = 0;
+                groundBird = null;
+                fuelBalloon = null;
+                activeBullet = null;
+                explosion = null;
+                
+                // Reposition player for new canvas size
+                player.x = isLandscape ? 200 : 150;
+                player.y = isLandscape ? 400 : 600;
+                
+                // Reinitialize game elements
+                init();
+            }
+        }
+        
+        // Initial resize
+        resizeCanvas();
+        
+        // Listen for orientation changes
+        window.addEventListener('resize', () => {
+            setTimeout(resizeCanvas, 100);
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 200); // Longer delay for orientation to settle
+        });
+        
+        // Year link click handler
+        document.getElementById('yearLink').addEventListener('click', () => {
+            openStory();
+        });
+        
+        // Canvas click to activate audio (browser requirement)
+        canvas.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        });
+        
+        // Audio system
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let planeEngineSound = null;
+        let titleMusic = null;
+        
+        // Sound functions
+        function playTitleMusic() {
+            if (titleMusic) return; // Already playing
+            
+            console.log('Starting title music...');
+            
+            // Retro arcade melody - catchy and fun!
+            function playTitleMelody() {
+                const currentTime = audioContext.currentTime;
+                
+                console.log('Playing title melody, audioContext state:', audioContext.state);
+                
+                // Classic arcade-style melody inspired by 80s games
+                // Pattern: C-E-G-C-G-E-C-D-E-F-E-D-C (playful ascending/descending)
+                const melody = [
+                    { freq: 523.25, dur: 0.15 },  // C5
+                    { freq: 659.25, dur: 0.15 },  // E5
+                    { freq: 783.99, dur: 0.15 },  // G5
+                    { freq: 1046.50, dur: 0.2 },  // C6 (high)
+                    { freq: 783.99, dur: 0.15 },  // G5
+                    { freq: 659.25, dur: 0.15 },  // E5
+                    { freq: 523.25, dur: 0.2 },   // C5
+                    { freq: 0, dur: 0.1 },        // Rest
+                    { freq: 587.33, dur: 0.15 },  // D5
+                    { freq: 659.25, dur: 0.15 },  // E5
+                    { freq: 698.46, dur: 0.15 },  // F5
+                    { freq: 659.25, dur: 0.15 },  // E5
+                    { freq: 587.33, dur: 0.15 },  // D5
+                    { freq: 523.25, dur: 0.3 }    // C5 (longer ending)
+                ];
+                
+                let time = currentTime;
+                
+                melody.forEach(({ freq, dur }) => {
+                    if (freq > 0) {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        
+                        // Square wave for retro 8-bit sound
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(freq, time);
+                        
+                        // Quick attack, short sustain (classic arcade beep)
+                        gain.gain.setValueAtTime(0.15, time);
+                        gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+                        
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.start(time);
+                        osc.stop(time + dur);
+                    }
+                    time += dur;
+                });
+            }
+            
+            // Play melody immediately
+            playTitleMelody();
+            
+            // Loop melody every 3.5 seconds
+            titleMusic = setInterval(() => {
+                playTitleMelody();
+            }, 3500);
+        }
+        
+        function stopTitleMusic() {
+            if (titleMusic) {
+                clearInterval(titleMusic);
+                titleMusic = null;
+            }
+        }
+        
+        function playGameOverMusic() {
+            // Sad descending melody for game over
+            const notes = [
+                { freq: 523.25, dur: 0.3 }, // C5
+                { freq: 493.88, dur: 0.3 }, // B4
+                { freq: 440.00, dur: 0.3 }, // A4
+                { freq: 392.00, dur: 0.5 }, // G4
+                { freq: 0, dur: 0.1 },      // Rest
+                { freq: 329.63, dur: 0.6 }  // E4 (final sad note)
+            ];
+            
+            let currentTime = audioContext.currentTime;
+            
+            notes.forEach(({ freq, dur }) => {
+                if (freq > 0) {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, currentTime);
+                    
+                    gain.gain.setValueAtTime(0.2, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, currentTime + dur);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.start(currentTime);
+                    osc.stop(currentTime + dur);
+                }
+                currentTime += dur;
+            });
+        }
+        function playPlaneEngine() {
+            if (planeEngineSound) return; // Already playing
+            
+            console.log('Starting plane engine, audioContext state:', audioContext.state);
+            
+            // Create WWII plane engine with sputtering effect - LOUDER
+            const oscillator1 = audioContext.createOscillator();
+            const oscillator2 = audioContext.createOscillator();
+            const oscillator3 = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            // Main engine rumble
+            oscillator1.type = 'sawtooth';
+            oscillator1.frequency.setValueAtTime(55, audioContext.currentTime);
+            
+            // Secondary engine harmonics
+            oscillator2.type = 'square';
+            oscillator2.frequency.setValueAtTime(110, audioContext.currentTime);
+            
+            // Sputtering/misfiring effect (LFO) - MORE PRONOUNCED
+            oscillator3.type = 'sine';
+            oscillator3.frequency.setValueAtTime(6, audioContext.currentTime); // Slower sputter
+            
+            const sputterGain = audioContext.createGain();
+            sputterGain.gain.setValueAtTime(25, audioContext.currentTime); // Increased from 15 to 25
+            
+            oscillator3.connect(sputterGain);
+            sputterGain.connect(oscillator1.frequency);
+            
+            // Low-pass filter for muffled engine sound
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(400, audioContext.currentTime); // Increased from 300
+            filter.Q.setValueAtTime(3, audioContext.currentTime); // Increased resonance
+            
+            gainNode.gain.setValueAtTime(0.25, audioContext.currentTime); // Increased from 0.15 to 0.25
+            
+            oscillator1.connect(filter);
+            oscillator2.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator1.start();
+            oscillator2.start();
+            oscillator3.start();
+            
+            planeEngineSound = { oscillator1, oscillator2, oscillator3, gainNode };
+        }
+        
+        function stopPlaneEngine() {
+            if (planeEngineSound) {
+                planeEngineSound.oscillator1.stop();
+                planeEngineSound.oscillator2.stop();
+                planeEngineSound.oscillator3.stop();
+                planeEngineSound = null;
+            }
+        }
+        
+        function playShootSound() {
+            // Revolver "BANG" sound
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            // Sharp attack for gunshot
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.05);
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(800, audioContext.currentTime);
+            filter.Q.setValueAtTime(5, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.6, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Add noise burst for realistic gunshot
+            const bufferSize = audioContext.sampleRate * 0.1;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+            }
+            
+            const noise = audioContext.createBufferSource();
+            const noiseGain = audioContext.createGain();
+            const noiseFilter = audioContext.createBiquadFilter();
+            
+            noise.buffer = buffer;
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.setValueAtTime(1000, audioContext.currentTime);
+            
+            noiseGain.gain.setValueAtTime(0.4, audioContext.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            
+            oscillator.start();
+            noise.start();
+            oscillator.stop(audioContext.currentTime + 0.15);
+            noise.stop(audioContext.currentTime + 0.1);
+        }
+        
+        function playExplosionSound() {
+            // Explosion boom
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.3);
+            
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+            
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
+            
+            // Add white noise for debris
+            const bufferSize = audioContext.sampleRate * 0.3;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = audioContext.createBufferSource();
+            const noiseGain = audioContext.createGain();
+            const noiseFilter = audioContext.createBiquadFilter();
+            
+            noise.buffer = buffer;
+            noiseFilter.type = 'bandpass';
+            noiseFilter.frequency.setValueAtTime(500, audioContext.currentTime);
+            
+            noiseGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            noise.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            
+            noise.start();
+            noise.stop(audioContext.currentTime + 0.3);
+        }
+        
+        function playComicCrashSound() {
+            // Silly cartoon crash - descending "boing" with wobble
+            const oscillator1 = audioContext.createOscillator();
+            const oscillator2 = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            // Main descending tone
+            oscillator1.type = 'sine';
+            oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator1.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
+            
+            // Wobble effect
+            oscillator2.type = 'sine';
+            oscillator2.frequency.setValueAtTime(6, audioContext.currentTime);
+            
+            const modulationGain = audioContext.createGain();
+            modulationGain.gain.setValueAtTime(50, audioContext.currentTime);
+            
+            oscillator2.connect(modulationGain);
+            modulationGain.connect(oscillator1.frequency);
+            
+            gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator1.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator1.start();
+            oscillator2.start();
+            oscillator1.stop(audioContext.currentTime + 0.5);
+            oscillator2.stop(audioContext.currentTime + 0.5);
+            
+            // Add "bonk" sound at the end
+            setTimeout(() => {
+                const bonk = audioContext.createOscillator();
+                const bonkGain = audioContext.createGain();
+                
+                bonk.type = 'triangle';
+                bonk.frequency.setValueAtTime(150, audioContext.currentTime);
+                bonkGain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                bonkGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                bonk.connect(bonkGain);
+                bonkGain.connect(audioContext.destination);
+                
+                bonk.start();
+                bonk.stop(audioContext.currentTime + 0.1);
+            }, 300);
+        }
+        
+        function playFallingSound() {
+            // Falling bomb whistle - descending pitch
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            oscillator.type = 'sine';
+            
+            // High pitch descending quickly (whistling down)
+            oscillator.frequency.setValueAtTime(2000, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 2.0);
+            
+            // Bandpass filter for whistle effect
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1500, audioContext.currentTime);
+            filter.Q.setValueAtTime(10, audioContext.currentTime);
+            
+            // Volume starts low and gets slightly louder as it falls
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.25, audioContext.currentTime + 2.0);
+            
+            oscillator.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 2.0);
+            
+            return oscillator; // Return so we can stop it if needed
+        }
+        
+        function playFuelRefillSound() {
+            // Happy ascending melody - like powering up!
+            // Pentatonic scale ascending: C-D-E-G-A-C (happy, optimistic sound)
+            const notes = [
+                261.63,  // C4
+                293.66,  // D4
+                329.63,  // E4
+                392.00,  // G4
+                440.00,  // A4
+                523.25   // C5 (octave higher - FULL!)
+            ];
+            
+            console.log('Playing fuel refill sound - ascending melody!');
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const currentTime = audioContext.currentTime;
+                    
+                    // Bright, cheerful sine wave
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, currentTime);
+                    
+                    // Quick attack, short sustain (like a xylophone or music box)
+                    gain.gain.setValueAtTime(0.3, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.2);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.start(currentTime);
+                    osc.stop(currentTime + 0.2);
+                }, index * 80); // 80ms between each note (fast, upbeat)
+            });
+        }
+        
+        function playSunsetSound() {
+            // Descending melody for nightfall (peaceful, calming)
+            const notes = [
+                523.25,  // C5
+                440.00,  // A4
+                392.00,  // G4
+                329.63,  // E4
+                293.66,  // D4
+                261.63   // C4 (lower, settling down for night)
+            ];
+            
+            console.log('🌙 Sunset - descending melody');
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const currentTime = audioContext.currentTime;
+                    
+                    // Soft, warm sine wave (like sunset colors)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, currentTime);
+                    
+                    // Gentle, peaceful envelope
+                    gain.gain.setValueAtTime(0.2, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.start(currentTime);
+                    osc.stop(currentTime + 0.4);
+                }, index * 150); // 150ms between notes (slower, peaceful)
+            });
+        }
+        
+        function playSunriseSound() {
+            // Ascending melody for dawn (bright, awakening)
+            const notes = [
+                261.63,  // C4
+                293.66,  // D4
+                329.63,  // E4
+                392.00,  // G4
+                440.00,  // A4
+                523.25   // C5 (higher, rising sun)
+            ];
+            
+            console.log('☀️ Sunrise - ascending melody');
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const currentTime = audioContext.currentTime;
+                    
+                    // Bright sine wave (like morning light)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, currentTime);
+                    
+                    // Bright, cheerful envelope
+                    gain.gain.setValueAtTime(0.2, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.35);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.start(currentTime);
+                    osc.stop(currentTime + 0.35);
+                }, index * 120); // 120ms between notes (upbeat morning energy)
+            });
+        }
+        
+        function playRecordBellSound() {
+            // Three bell chimes for breaking record
+            const bellFrequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 (major chord)
+            
+            bellFrequencies.forEach((freq, index) => {
+                setTimeout(() => {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    const currentTime = audioContext.currentTime;
+                    
+                    // Bell-like tone
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, currentTime);
+                    
+                    // Bell envelope - quick attack, long decay
+                    gain.gain.setValueAtTime(0.4, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, currentTime + 1.5);
+                    
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.start(currentTime);
+                    osc.stop(currentTime + 1.5);
+                }, index * 400); // 400ms between each bell
+            });
+        }
+        
+        // Highscore system
+        let highscores = [];
+        
+        function loadHighScores() {
+            const saved = localStorage.getItem('birdBusterHighScores');
+            if (saved) {
+                highscores = JSON.parse(saved);
+            } else {
+                highscores = [];
+            }
+            updateHighScoreDisplay();
+        }
+        
+        function saveHighScoreToStorage() {
+            localStorage.setItem('birdBusterHighScores', JSON.stringify(highscores));
+        }
+        
+        function updateHighScoreDisplay() {
+            const list = document.getElementById('highscoreList');
+            if (highscores.length === 0) {
+                list.innerHTML = '<p style="color: #999; font-size: 14px;">No hay puntajes aún</p>';
+            } else {
+                let html = '<div style="text-align: left; display: inline-block; min-width: 180px;">';
+                highscores.slice(0, 5).forEach((hs, i) => {
+                    html += `<div style="margin: 5px 0; font-family: monospace; font-size: 16px;">${i + 1}. ${hs.initials} ..... ${hs.score}</div>`;
+                });
+                html += '</div>';
+                list.innerHTML = html;
+            }
+            
+            // Update top score in UI
+            const topScore = highscores.length > 0 ? highscores[0].score : 0;
+            document.getElementById('highscore').textContent = topScore;
+        }
+        
+        function isNewHighScore(score) {
+            if (highscores.length < 5) return true;
+            return score > highscores[highscores.length - 1].score;
+        }
+        
+        function saveHighScore() {
+            const i1 = document.getElementById('initial1').value.toUpperCase() || 'A';
+            const i2 = document.getElementById('initial2').value.toUpperCase() || 'A';
+            const i3 = document.getElementById('initial3').value.toUpperCase() || 'A';
+            const initials = i1 + i2 + i3;
+            
+            highscores.push({ initials: initials, score: score });
+            highscores.sort((a, b) => b.score - a.score);
+            highscores = highscores.slice(0, 5); // Keep top 5
+            
+            saveHighScoreToStorage();
+            updateHighScoreDisplay();
+            
+            document.getElementById('highscoreEntry').style.display = 'none';
+        }
+        
+        // Auto-advance to next initial input
+        document.addEventListener('DOMContentLoaded', () => {
+            const i1 = document.getElementById('initial1');
+            const i2 = document.getElementById('initial2');
+            const i3 = document.getElementById('initial3');
+            
+            i1.addEventListener('input', () => { if (i1.value) i2.focus(); });
+            i2.addEventListener('input', () => { if (i2.value) i3.focus(); });
+            i3.addEventListener('input', () => { 
+                if (i3.value) {
+                    // Auto-save when all 3 letters entered
+                    setTimeout(() => saveHighScore(), 100);
+                }
+            });
+            
+            loadHighScores();
+        });
+        
+        
+        function init() {
+            const isLandscape = canvas.width > canvas.height;
+            
+            if (isLandscape) {
+                // Landscape: More clouds with parallax effect
+                for (let i = 0; i < 10; i++) {
+                    // Randomly choose cloud size: small (far), medium, or large (close)
+                    const sizeType = Math.random();
+                    let size, speed;
+                    
+                    if (sizeType < 0.4) {
+                        // Small clouds - far away, VERY slow (doubled size, slower)
+                        size = 40; // Was 20, now 40 (2x)
+                        speed = 0.2 + Math.random() * 0.2; // 0.2-0.4 (slower than before)
+                    } else if (sizeType < 0.7) {
+                        // Medium clouds
+                        size = 60; // Was 30, now 60 (2x)
+                        speed = 0.6 + Math.random() * 0.4; // 0.6-1.0 (same)
+                    } else {
+                        // Large clouds - close, FASTER (doubled size, faster)
+                        size = 90; // Was 45, now 90 (2x)
+                        speed = 1.2 + Math.random() * 0.6; // 1.2-1.8 (faster than before)
+                    }
+                    
+                    clouds.push({
+                        x: Math.random() * canvas.width,
+                        y: 50 + Math.random() * 400,
+                        speed: speed,
+                        size: size
+                    });
+                }
+                // 3 trees for wide canvas
+                spawnRandomTree(800);
+                spawnRandomTree(1600);
+                spawnRandomTree(2400);
+            } else {
+                // Portrait: Fewer clouds with parallax
+                for (let i = 0; i < 6; i++) {
+                    const sizeType = Math.random();
+                    let size, speed;
+                    
+                    if (sizeType < 0.4) {
+                        size = 40; // Doubled
+                        speed = 0.2 + Math.random() * 0.2; // Slower
+                    } else if (sizeType < 0.7) {
+                        size = 60; // Doubled
+                        speed = 0.6 + Math.random() * 0.4;
+                    } else {
+                        size = 90; // Doubled
+                        speed = 1.2 + Math.random() * 0.6; // Faster
+                    }
+                    
+                    clouds.push({
+                        x: Math.random() * canvas.width,
+                        y: 100 + Math.random() * 600,
+                        speed: speed,
+                        size: size
+                    });
+                }
+                // 2 trees for portrait
+                spawnRandomTree(400);
+                spawnRandomTree(1200);
+            }
+        }
+        
+        function spawnRandomTree(xPosition) {
+            const isDeadTree = Math.random() < 0.5; // 50% chance of each type
+            trees.push({
+                x: xPosition,
+                y: canvas.height * 0.85 - 90,
+                speed: 3.5,
+                hasDeadTree: isDeadTree
+            });
+        }
+        
+        // Simple sprite drawing with your designs
+        function drawPlane() {
+            ctx.save();
+            
+            // Main fuselage - red with rounded shape
+            ctx.fillStyle = '#FF4444';
+            ctx.beginPath();
+            ctx.ellipse(player.x + 35, player.y + 25, 30, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Nose cone
+            ctx.beginPath();
+            ctx.moveTo(player.x + 65, player.y + 25);
+            ctx.lineTo(player.x + 72, player.y + 20);
+            ctx.lineTo(player.x + 72, player.y + 30);
+            ctx.fill();
+            
+            // Top wing - dark navy/black
+            ctx.fillStyle = '#2C3E50';
+            ctx.fillRect(player.x + 15, player.y + 5, 50, 8);
+            // Wing supports
+            ctx.fillRect(player.x + 25, player.y + 13, 3, 10);
+            ctx.fillRect(player.x + 50, player.y + 13, 3, 10);
+            
+            // Bottom wing - dark navy/black
+            ctx.fillRect(player.x + 15, player.y + 38, 50, 8);
+            
+            // Cockpit - black circle with pilot
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(player.x + 30, player.y + 25, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pilot's head
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.arc(player.x + 30, player.y + 22, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Propeller - spinning at front
+            const propAngle = (frameCount * 0.3) % (Math.PI * 2);
+            ctx.fillStyle = '#34495E';
+            ctx.save();
+            ctx.translate(player.x + 72, player.y + 25);
+            ctx.rotate(propAngle);
+            ctx.fillRect(-2, -12, 4, 24);
+            ctx.fillRect(-12, -2, 24, 4);
+            ctx.restore();
+            
+            // Propeller hub
+            ctx.fillStyle = '#555';
+            ctx.beginPath();
+            ctx.arc(player.x + 72, player.y + 25, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Landing gear - wheels
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            // Struts
+            ctx.beginPath();
+            ctx.moveTo(player.x + 25, player.y + 35);
+            ctx.lineTo(player.x + 20, player.y + 48);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(player.x + 45, player.y + 35);
+            ctx.lineTo(player.x + 40, player.y + 48);
+            ctx.stroke();
+            
+            // Wheels - circles like your drawing
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(player.x + 20, player.y + 48, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(player.x + 40, player.y + 48, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Tail section
+            ctx.fillStyle = '#2C3E50';
+            // Vertical stabilizer
+            ctx.fillRect(player.x + 5, player.y + 15, 8, 20);
+            // Horizontal stabilizer
+            ctx.fillRect(player.x, player.y + 22, 15, 6);
+            
+            ctx.restore();
+        }
+        
+        function drawFlyingBird(bird) {
+            ctx.save();
+            
+            // Bird color smoothly transitions from black to gray
+            const dayColor = { r: 0, g: 0, b: 0 }; // Black
+            const nightColor = { r: 128, g: 128, b: 128 }; // Gray
+            const birdR = Math.floor(dayColor.r + (nightColor.r - dayColor.r) * transitionProgress);
+            const birdG = Math.floor(dayColor.g + (nightColor.g - dayColor.g) * transitionProgress);
+            const birdB = Math.floor(dayColor.b + (nightColor.b - dayColor.b) * transitionProgress);
+            const birdColor = `rgb(${birdR}, ${birdG}, ${birdB})`;
+            
+            // Wings - animated SLOWER (draw FIRST, behind the body)
+            const wingUp = Math.floor(frameCount / 20) % 2 === 0;
+            ctx.fillStyle = birdColor;
+            
+            if (wingUp) {
+                // Wings up position - single unified wing shape
+                ctx.beginPath();
+                ctx.moveTo(bird.x, bird.y - 2);
+                ctx.quadraticCurveTo(bird.x + 5, bird.y - 16, bird.x + 12, bird.y - 18);
+                ctx.quadraticCurveTo(bird.x + 15, bird.y - 14, bird.x + 12, bird.y - 6);
+                ctx.lineTo(bird.x + 5, bird.y - 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.moveTo(bird.x, bird.y - 2);
+                ctx.quadraticCurveTo(bird.x - 5, bird.y - 16, bird.x - 12, bird.y - 18);
+                ctx.quadraticCurveTo(bird.x - 15, bird.y - 14, bird.x - 12, bird.y - 6);
+                ctx.lineTo(bird.x - 5, bird.y - 2);
+                ctx.fill();
+            } else {
+                // Wings down position - single unified wing shape
+                ctx.beginPath();
+                ctx.moveTo(bird.x, bird.y + 2);
+                ctx.quadraticCurveTo(bird.x + 5, bird.y + 14, bird.x + 12, bird.y + 16);
+                ctx.quadraticCurveTo(bird.x + 15, bird.y + 12, bird.x + 12, bird.y + 5);
+                ctx.lineTo(bird.x + 5, bird.y + 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.moveTo(bird.x, bird.y + 2);
+                ctx.quadraticCurveTo(bird.x - 5, bird.y + 14, bird.x - 12, bird.y + 16);
+                ctx.quadraticCurveTo(bird.x - 15, bird.y + 12, bird.x - 12, bird.y + 5);
+                ctx.lineTo(bird.x - 5, bird.y + 2);
+                ctx.fill();
+            }
+            
+            // Tail feathers (behind body)
+            ctx.beginPath();
+            ctx.moveTo(bird.x + 18, bird.y);
+            ctx.lineTo(bird.x + 24, bird.y - 4);
+            ctx.lineTo(bird.x + 23, bird.y);
+            ctx.lineTo(bird.x + 24, bird.y + 4);
+            ctx.fill();
+            
+            // Body - elongated (draw OVER wings)
+            ctx.fillStyle = birdColor;
+            ctx.beginPath();
+            ctx.ellipse(bird.x, bird.y, 16, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Head (on top of body)
+            ctx.beginPath();
+            ctx.arc(bird.x - 14, bird.y - 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Beak - pointed
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.moveTo(bird.x - 20, bird.y - 2);
+            ctx.lineTo(bird.x - 25, bird.y - 4);
+            ctx.lineTo(bird.x - 25, bird.y);
+            ctx.fill();
+            
+            // Eye (white dot)
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(bird.x - 16, bird.y - 4, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        function drawTree(tree, hasBird) {
+            ctx.save();
+            
+            if (tree.hasDeadTree) {
+                // DEAD TREE (dry with 3 branches) - THINNER trunk
+                ctx.fillStyle = '#8B4513'; // Brown trunk
+                ctx.fillRect(tree.x + 10, tree.y, 15, 90); // Thinner: 15px wide instead of 35px
+                
+                // Dead branches (3 branches)
+                ctx.strokeStyle = '#654321';
+                ctx.lineWidth = 3;
+                
+                // Top left branch
+                ctx.beginPath();
+                ctx.moveTo(tree.x + 18, tree.y + 20);
+                ctx.lineTo(tree.x - 10, tree.y + 10);
+                ctx.stroke();
+                
+                // Top right branch
+                ctx.beginPath();
+                ctx.moveTo(tree.x + 18, tree.y + 20);
+                ctx.lineTo(tree.x + 45, tree.y + 10);
+                ctx.stroke();
+                
+                // Middle branch
+                ctx.beginPath();
+                ctx.moveTo(tree.x + 18, tree.y + 40);
+                ctx.lineTo(tree.x + 43, tree.y + 35);
+                ctx.stroke();
+                
+                // Bird on branch if present - smooth color transition
+                if (hasBird && groundBird && groundBird.treeRef === tree) {
+                    // Bird color smoothly transitions from black to gray
+                    const dayColor = { r: 0, g: 0, b: 0 }; // Black
+                    const nightColor = { r: 128, g: 128, b: 128 }; // Gray
+                    const birdR = Math.floor(dayColor.r + (nightColor.r - dayColor.r) * transitionProgress);
+                    const birdG = Math.floor(dayColor.g + (nightColor.g - dayColor.g) * transitionProgress);
+                    const birdB = Math.floor(dayColor.b + (nightColor.b - dayColor.b) * transitionProgress);
+                    ctx.fillStyle = `rgb(${birdR}, ${birdG}, ${birdB})`;
+                    
+                    // Body - smaller, similar size to flying birds
+                    ctx.beginPath();
+                    ctx.ellipse(groundBird.x, groundBird.y, 16, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Head - smaller
+                    ctx.beginPath();
+                    ctx.arc(groundBird.x - 14, groundBird.y - 6, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Beak pointing down-left
+                    ctx.fillStyle = '#666';
+                    ctx.beginPath();
+                    ctx.moveTo(groundBird.x - 20, groundBird.y - 5);
+                    ctx.lineTo(groundBird.x - 26, groundBird.y - 1);
+                    ctx.lineTo(groundBird.x - 25, groundBird.y - 3);
+                    ctx.fill();
+                    
+                    // Eye - white dot
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(groundBird.x - 16, groundBird.y - 8, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(groundBird.x - 16, groundBird.y - 8, 1, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Small tail feathers
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.moveTo(groundBird.x + 16, groundBird.y);
+                    ctx.lineTo(groundBird.x + 20, groundBird.y - 6);
+                    ctx.lineTo(groundBird.x + 19, groundBird.y);
+                    ctx.fill();
+                    
+                    // Feet
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(groundBird.x, groundBird.y + 10);
+                    ctx.lineTo(groundBird.x - 2, groundBird.y + 15);
+                    ctx.moveTo(groundBird.x, groundBird.y + 10);
+                    ctx.lineTo(groundBird.x + 2, groundBird.y + 15);
+                    ctx.stroke();
+                }
+            } else {
+                // NORMAL GREEN TREE (with foliage and VISIBLE BROWN trunk)
+                
+                // Brown trunk - visible
+                ctx.fillStyle = '#6B4423'; // Brown trunk
+                ctx.fillRect(tree.x + 15, tree.y + 40, 20, 50);
+                
+                // Green foliage layers - reduced so trunk shows
+                ctx.fillStyle = '#1a3d0a'; // Very dark green
+                
+                // Main center foliage
+                ctx.beginPath();
+                ctx.arc(tree.x + 25, tree.y + 35, 35, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Left side cluster
+                ctx.beginPath();
+                ctx.arc(tree.x + 5, tree.y + 25, 25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Right side cluster
+                ctx.beginPath();
+                ctx.arc(tree.x + 45, tree.y + 25, 25, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Top center - lighter green for depth
+                ctx.fillStyle = '#245010'; 
+                ctx.beginPath();
+                ctx.arc(tree.x + 25, tree.y + 15, 28, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Top highlights
+                ctx.fillStyle = '#2d6618'; 
+                ctx.beginPath();
+                ctx.arc(tree.x + 15, tree.y + 10, 18, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(tree.x + 35, tree.y + 10, 18, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawFuelBalloon(balloon) {
+            ctx.save();
+            
+            // Red balloon
+            ctx.fillStyle = '#FF6B6B';
+            ctx.beginPath();
+            ctx.ellipse(balloon.x, balloon.y, 28, 35, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // String
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(balloon.x, balloon.y + 35);
+            ctx.lineTo(balloon.x, balloon.y + 55);
+            ctx.stroke();
+            
+            // Basket
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(balloon.x - 10, balloon.y + 55, 20, 15);
+            
+            // FUEL text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('FUEL', balloon.x, balloon.y + 5);
+            
+            ctx.restore();
+        }
+        
+        function drawExplosion(exp) {
+            ctx.save();
+            
+            const progress = exp.frame / 30; // 30 frames total
+            const sizeMultiplier = exp.isBig ? 2 : 1; // Double size for fuel explosions
+            const radius = (20 + progress * 40) * sizeMultiplier;
+            
+            // Outer explosion circle - orange/red
+            ctx.fillStyle = `rgba(255, ${100 - progress * 100}, 0, ${1 - progress})`;
+            ctx.beginPath();
+            ctx.arc(exp.x, exp.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Inner bright core
+            ctx.fillStyle = `rgba(255, 255, 100, ${1 - progress})`;
+            ctx.beginPath();
+            ctx.arc(exp.x, exp.y, radius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Explosion particles
+            const particleCount = exp.isBig ? 12 : 8; // More particles for big explosion
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (i / particleCount) * Math.PI * 2;
+                const dist = radius * 1.2;
+                const px = exp.x + Math.cos(angle) * dist;
+                const py = exp.y + Math.sin(angle) * dist;
+                
+                ctx.fillStyle = `rgba(255, ${150 - progress * 150}, 0, ${0.8 - progress})`;
+                ctx.beginPath();
+                ctx.arc(px, py, (8 - progress * 6) * sizeMultiplier, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawTitleScreen() {
+            ctx.save();
+            
+            // Show credits overlay
+            document.getElementById('creditsOverlay').style.display = 'block';
+            
+            // Background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Title - BIRD BUSTER
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeStyle = '#FF4444';
+            ctx.lineWidth = 4;
+            ctx.font = 'bold 72px Arial';
+            ctx.textAlign = 'center';
+            ctx.strokeText('BIRD BUSTER', canvas.width / 2, canvas.height / 2 - 150);
+            ctx.fillText('BIRD BUSTER', canvas.width / 2, canvas.height / 2 - 150);
+            
+            // Credits now handled by HTML overlay (see creditsOverlay div)
+            
+            // Scoring information
+            ctx.textAlign = 'left';
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#FFD700';
+            
+            const leftX = canvas.width / 2 - 150;
+            const startY = canvas.height / 2 + 30; // Changed from -20 to +30 (50px lower)
+            const lineHeight = 30;
+            
+            ctx.fillText('🐦 Pájaro volador:', leftX, startY);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillText('+100 pts', leftX + 200, startY);
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText('🐦 Pájaro en árbol:', leftX, startY + lineHeight);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillText('+50 pts', leftX + 200, startY + lineHeight);
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText('⏱️  Cada segundo:', leftX, startY + lineHeight * 2);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillText('+1 pt', leftX + 200, startY + lineHeight * 2);
+            
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText('⛽ Globo combustible:', leftX, startY + lineHeight * 3);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillText('+200 pts', leftX + 200, startY + lineHeight * 3);
+            
+            // Blinking "Press any key" message
+            ctx.textAlign = 'center';
+            if (Math.floor(frameCount / 30) % 2 === 0) {
+                ctx.fillStyle = '#FFF';
+                ctx.font = '24px Arial';
+                ctx.fillText('Press SPACE or TAP to Start', canvas.width / 2, canvas.height / 2 + 150);
+            }
+            
+            // Audio status indicator
+            ctx.font = '16px Arial';
+            if (audioContext.state === 'running') {
+                ctx.fillStyle = '#00FF00';
+                ctx.fillText('🔊 Audio: ON', canvas.width / 2, canvas.height / 2 + 190);
+            } else {
+                ctx.fillStyle = '#FF4444';
+                ctx.fillText('🔇 Audio: OFF (Click to activate)', canvas.width / 2, canvas.height / 2 + 190);
+            }
+            
+            // Retro arcade border
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+            
+            ctx.restore();
+            
+            // Start title music if not playing
+            if (!titleMusic && frameCount > 10) {
+                playTitleMusic();
+            }
+        }
+        
+        function spawnAirBird() {
+            // Progressive difficulty: max birds increases with score LEVELS
+            // Each level = 1000 points
+            const level = Math.floor(score / 1000);
+            let maxBirds = 1 + level; // Start with 1, add 1 per level
+            maxBirds = Math.min(maxBirds, 5); // Cap at 5 birds
+            
+            // Spawn rate stays constant
+            const spawnChance = 0.015;
+            
+            if (airBirds.length < maxBirds && Math.random() < spawnChance) {
+                airBirds.push({
+                    x: canvas.width + 50,
+                    y: 150 + Math.random() * (canvas.height * 0.85 - 300), // Random height in sky
+                    width: 30,
+                    height: 20,
+                    speed: (2.5 + Math.random() * 1.5) * gameSpeed // Affected by game speed
+                });
+            }
+        }
+        
+        function spawnGroundBird() {
+            if (!groundBird && trees.length > 0 && Math.random() < 0.008) {
+                // Only spawn bird on dead trees
+                const deadTrees = trees.filter(t => t.hasDeadTree);
+                if (deadTrees.length > 0) {
+                    const tree = deadTrees[Math.floor(Math.random() * deadTrees.length)];
+                    groundBird = {
+                        x: tree.x + 18,
+                        y: tree.y + 20,
+                        width: 32,
+                        height: 20,
+                        treeRef: tree
+                    };
+                }
+            }
+        }
+        
+        function spawnFuelBalloon() {
+            if (!fuelBalloon && fuel < 60 && Math.random() < 0.006) {
+                fuelBalloon = {
+                    x: canvas.width + 50,
+                    y: 120 + Math.random() * 180,
+                    width: 56,
+                    height: 70,
+                    speed: 1.8
+                };
+            }
+        }
+        
+        function updatePlayer() {
+            // If out of fuel, plane glides down slowly
+            if (fuel <= 0) {
+                // Start falling sound if not already playing
+                if (!fallingSound) {
+                    fallingSound = playFallingSound();
+                }
+                
+                // Glide down slowly (like gliding)
+                player.y += 1; // Slower fall - gliding effect
+                
+                // Can move left/right while gliding
+                if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+                if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
+                
+                // Can press down to fall faster
+                if (keys['ArrowDown']) player.y += 2;
+                
+                // CANNOT go up (no fuel for lift)
+                // ArrowUp is ignored
+                
+                // Check if crashed into ground
+                const groundLevel = canvas.height * 0.85;
+                if (player.y + player.height >= groundLevel) {
+                    explosion = {
+                        x: player.x + player.width / 2,
+                        y: player.y + player.height / 2,
+                        frame: 0,
+                        isBig: false
+                    };
+                    playComicCrashSound();
+                    gameOver();
+                    return;
+                }
+                return;
+            }
+            
+            // Normal controls when fuel available
+            if (keys['ArrowUp'] && player.y > 0) player.y -= player.speed;
+            if (keys['ArrowDown'] && player.y < canvas.height * 0.85 - player.height + 10) player.y += player.speed; // Can go closer to ground
+            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) player.x += player.speed;
+            
+            // Shoot when space is pressed and no active bullet exists
+            if (keys[' '] && !activeBullet) {
+                activeBullet = { x: player.x + player.width, y: player.y + player.height / 2 };
+                playShootSound();
+                keys[' '] = false; // Reset key immediately to prevent holding
+            }
+        }
+        
+        function checkCollision(obj1, obj2) {
+            return obj1.x < obj2.x + (obj2.width || 30) &&
+                   obj1.x + (obj1.width || 10) > obj2.x &&
+                   obj1.y < obj2.y + (obj2.height || 20) &&
+                   obj1.y + (obj1.height || 10) > obj2.y;
+        }
+        
+        function update() {
+            // Single bullet update
+            if (activeBullet) {
+                activeBullet.x += bulletSpeed;
+                
+                // Remove bullet when it reaches right edge
+                if (activeBullet.x > canvas.width) {
+                    activeBullet = null;
+                }
+            }
+            
+            // Air birds - simple horizontal movement, no AI chasing
+            for (let i = airBirds.length - 1; i >= 0; i--) {
+                airBirds[i].x -= airBirds[i].speed;
+                
+                if (checkCollision(player, airBirds[i])) {
+                    gameOver();
+                    return;
+                }
+                
+                // Check collision with active bullet
+                if (activeBullet && checkCollision(activeBullet, airBirds[i])) {
+                    score += 100; // Air bird destroyed
+                    activeBullet = null; // Remove bullet
+                    airBirds.splice(i, 1);
+                    continue;
+                }
+                
+                if (i < airBirds.length && airBirds[i].x < -50) airBirds.splice(i, 1);
+            }
+            
+            // Ground bird - check player collision
+            if (groundBird) {
+                groundBird.x = groundBird.treeRef.x + 18;
+                
+                // Player collision with ground bird
+                if (checkCollision(player, groundBird)) {
+                    explosion = {
+                        x: player.x + player.width / 2,
+                        y: player.y + player.height / 2,
+                        frame: 0,
+                        isBig: false
+                    };
+                    playExplosionSound();
+                    gameOver();
+                    return;
+                }
+                
+                // Bullet collision with ground bird
+                if (activeBullet && checkCollision(activeBullet, groundBird)) {
+                    score += 50; // Ground bird destroyed
+                    activeBullet = null;
+                    groundBird = null;
+                }
+            }
+            
+            // Fuel balloon
+            if (fuelBalloon) {
+                fuelBalloon.x -= fuelBalloon.speed;
+                if (checkCollision(player, fuelBalloon)) {
+                    fuel = Math.min(100, fuel + 50);
+                    playFuelRefillSound(); // Happy ascending melody!
+                    fuelBalloon = null;
+                }
+                if (fuelBalloon && fuelBalloon.x < -100) fuelBalloon = null;
+            }
+            
+            // Bullet hits fuel balloon - BIG EXPLOSION and BONUS points
+            if (fuelBalloon && activeBullet) {
+                if (checkCollision(activeBullet, fuelBalloon)) {
+                    // Create BIG explosion
+                    explosion = {
+                        x: fuelBalloon.x,
+                        y: fuelBalloon.y,
+                        frame: 0,
+                        isBig: true // Double size explosion
+                    };
+                    
+                    playExplosionSound(); // Play explosion sound
+                    
+                    // BONUS POINTS for destroying fuel balloon
+                    score += 200;
+                    
+                    // Remove balloon and bullet
+                    fuelBalloon = null;
+                    activeBullet = null;
+                }
+            }
+            
+            // Tree collision detection (only with alive trees)
+            trees.forEach(tree => {
+                // Skip destroyed trees
+                if (destroyedTrees.includes(tree)) return;
+                
+                let treeHitbox;
+                if (tree.hasDeadTree) {
+                    // Dead tree - NOW HAS COLLISION
+                    treeHitbox = {
+                        x: tree.x + 10, // Trunk position
+                        y: tree.y,
+                        width: 15, // Narrow trunk
+                        height: 90
+                    };
+                    
+                    // Check player collision with dead tree
+                    if (checkCollision(player, treeHitbox)) {
+                        explosion = {
+                            x: player.x + player.width / 2,
+                            y: player.y + player.height / 2,
+                            frame: 0,
+                            isBig: false
+                        };
+                        playExplosionSound();
+                        gameOver();
+                        return;
+                    }
+                } else {
+                    // Green tree - hitbox for trunk and foliage
+                    treeHitbox = {
+                        x: tree.x,
+                        y: tree.y,
+                        width: 65,
+                        height: 90
+                    };
+                    
+                    // Check player collision with green tree
+                    if (checkCollision(player, treeHitbox)) {
+                        explosion = {
+                            x: player.x + player.width / 2,
+                            y: player.y + player.height / 2,
+                            frame: 0,
+                            isBig: false
+                        };
+                        playComicCrashSound(); // Play comic crash sound
+                        gameOver();
+                        return;
+                    }
+                }
+            });
+            
+            // Ground collision detection
+            const groundY = canvas.height * 0.85;
+            if (player.y + player.height > groundY) {
+                explosion = {
+                    x: player.x + player.width / 2,
+                    y: groundY,
+                    frame: 0,
+                    isBig: false
+                };
+                playComicCrashSound(); // Play comic crash sound
+                gameOver();
+                return;
+            }
+            
+            // Bullets pass through ALL trees (dead and green)
+            // No collision detection needed
+            
+            // Background
+            clouds.forEach(c => {
+                c.x -= c.speed * gameSpeed;
+                if (c.x < -60) {
+                    c.x = canvas.width + 50;
+                    c.y = 50 + Math.random() * 400;
+                }
+            });
+            
+            trees.forEach(t => {
+                t.x -= t.speed * gameSpeed;
+                if (t.x < -100) {
+                    // Random spacing between 300-800 pixels
+                    const randomSpacing = 300 + Math.random() * 500;
+                    t.x = canvas.width + randomSpacing;
+                    // Randomly decide tree type
+                    t.hasDeadTree = Math.random() < 0.5;
+                    // Remove from destroyed list when respawning
+                    const index = destroyedTrees.indexOf(t);
+                    if (index > -1) {
+                        destroyedTrees.splice(index, 1);
+                    }
+                }
+            });
+            
+            // Fuel consumption - save fuel when flying low
+            if (frameCount % 60 === 0) {
+                // Calculate fuel consumption based on altitude
+                const horizonY = canvas.height * 0.85; // New horizon at 85%
+                const groundLevel = horizonY + 30; // Near ground level
+                
+                if (player.y > groundLevel) {
+                    // Flying very low - minimal fuel consumption
+                    fuel -= 0.3;
+                } else if (player.y > horizonY) {
+                    // Flying low - reduced fuel consumption
+                    fuel -= 0.6;
+                } else {
+                    // Flying high - normal fuel consumption
+                    fuel -= 1;
+                }
+                
+                if (fuel <= 0) {
+                    fuel = 0; // Keep at 0
+                    // Plane will fall - handled in updatePlayer
+                }
+                score += 1;
+                
+                // Check if new record broken
+                if (!recordBroken && previousHighScore > 0 && score > previousHighScore) {
+                    recordBroken = true;
+                    playRecordBellSound(); // Play 3 bell chimes
+                }
+                
+                // Progressive speed increase: +10% every 1000 points, max 2.5x
+                const level = Math.floor(score / 1000);
+                gameSpeed = Math.min(2.5, 1.0 + level * 0.1);
+                
+                // Detect level change for day/night transition sounds
+                if (level !== previousLevel && level > 0) {
+                    const isGoingToNight = (level % 2 === 1);
+                    
+                    if (isGoingToNight) {
+                        playSunsetSound(); // 🌙 Descending melody
+                    } else {
+                        playSunriseSound(); // ☀️ Ascending melody
+                    }
+                    
+                    previousLevel = level;
+                }
+                
+                // Day/Night cycle: odd levels = night, even levels = day
+                // Set target transition instead of instant change
+                targetTransition = (level % 2 === 1) ? 1 : 0;
+                isNightMode = (level % 2 === 1);
+            }
+            
+            // Smooth transition animation (happens every frame)
+            const transitionSpeed = 0.01; // Adjust this for faster/slower transitions (60 frames = 1 second at 0.01)
+            if (transitionProgress < targetTransition) {
+                transitionProgress = Math.min(targetTransition, transitionProgress + transitionSpeed);
+            } else if (transitionProgress > targetTransition) {
+                transitionProgress = Math.max(targetTransition, transitionProgress - transitionSpeed);
+            }
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            stopPlaneEngine(); // Stop engine sound
+            stopTitleMusic(); // Stop title music if playing
+            playGameOverMusic(); // Play sad game over melody
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+            
+            // Check if this is the new TOP 1 record
+            const isTop1 = highscores.length === 0 || score > highscores[0].score;
+            
+            // Show TOP 1 congratulations message
+            if (isTop1 && score > 0) {
+                document.getElementById('top1Message').style.display = 'block';
+            } else {
+                document.getElementById('top1Message').style.display = 'none';
+            }
+            
+            // Check if new high score
+            if (isNewHighScore(score)) {
+                document.getElementById('highscoreEntry').style.display = 'block';
+                document.getElementById('initial1').value = '';
+                document.getElementById('initial2').value = '';
+                document.getElementById('initial3').value = '';
+                setTimeout(() => document.getElementById('initial1').focus(), 100);
+            } else {
+                document.getElementById('highscoreEntry').style.display = 'none';
+            }
+            
+            updateHighScoreDisplay();
+        }
+        
+        function restartGame() {
+            showTitleScreen = true;
+            gameRunning = false;
+            score = 0;
+            fuel = 100;
+            frameCount = 0;
+            gameSpeed = 1.0;
+            isNightMode = false;
+            transitionProgress = 0;
+            targetTransition = 0;
+            previousLevel = 0; // Reset level tracking
+            player.x = 200;
+            player.y = 400;
+            bullets.length = 0;
+            activeBullet = null;
+            airBirds.length = 0;
+            groundBird = null;
+            fuelBalloon = null;
+            explosion = null;
+            fallingSound = null;
+            clouds.length = 0;
+            trees.length = 0;
+            destroyedTrees.length = 0;
+            document.getElementById('gameOver').style.display = 'none';
+        }
+        
+        function openStory() {
+            document.getElementById('storyModal').style.display = 'block';
+        }
+        
+        function closeStory() {
+            document.getElementById('storyModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside of it
+        document.getElementById('storyModal').addEventListener('click', (e) => {
+            if (e.target.id === 'storyModal') {
+                closeStory();
+            }
+        });
+        
+        let isMuted = false;
+        
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('muteBtn');
+            
+            if (isMuted) {
+                audioContext.suspend();
+                muteBtn.textContent = '🔇';
+                muteBtn.style.color = '#999';
+                console.log('🔇 Audio muted');
+            } else {
+                audioContext.resume();
+                muteBtn.textContent = '🔊';
+                muteBtn.style.color = '#FFD700';
+                console.log('🔊 Audio unmuted');
+            }
+        }
+        
+        function panicButton() {
+            // Boss key - close window immediately
+            console.log('❌ PANIC! Closing...');
+            window.close();
+            // If window.close() doesn't work (some browsers block it), redirect to blank page
+            setTimeout(() => {
+                window.location.href = 'about:blank';
+            }, 100);
+        }
+        
+        function gameLoop() {
+            // Update sun position for current canvas size
+            updateSunPosition();
+            
+            // Show title screen
+            if (showTitleScreen) {
+                drawTitleScreen();
+                frameCount++;
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            // Hide credits overlay when game is running
+            document.getElementById('creditsOverlay').style.display = 'none';
+            
+            // Clear - Day/Night cycle with SMOOTH TRANSITION
+            // Interpolate colors based on transition progress (0=day, 1=night)
+            
+            // Sky color interpolation
+            const daySkyColor = { r: 135, g: 206, b: 235 }; // #87CEEB
+            const nightSkyColor = { r: 26, g: 26, b: 46 }; // #1a1a2e
+            const skyR = Math.floor(daySkyColor.r + (nightSkyColor.r - daySkyColor.r) * transitionProgress);
+            const skyG = Math.floor(daySkyColor.g + (nightSkyColor.g - daySkyColor.g) * transitionProgress);
+            const skyB = Math.floor(daySkyColor.b + (nightSkyColor.b - daySkyColor.b) * transitionProgress);
+            
+            // Ground color interpolation
+            const dayGroundColor = { r: 144, g: 238, b: 144 }; // #90EE90
+            const nightGroundColor = { r: 45, g: 74, b: 46 }; // #2d4a2e
+            const groundR = Math.floor(dayGroundColor.r + (nightGroundColor.r - dayGroundColor.r) * transitionProgress);
+            const groundG = Math.floor(dayGroundColor.g + (nightGroundColor.g - dayGroundColor.g) * transitionProgress);
+            const groundB = Math.floor(dayGroundColor.b + (nightGroundColor.b - dayGroundColor.b) * transitionProgress);
+            
+            // Draw sky with interpolated color
+            ctx.fillStyle = `rgb(${skyR}, ${skyG}, ${skyB})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height * 0.85);
+            
+            // Draw ground with interpolated color
+            ctx.fillStyle = `rgb(${groundR}, ${groundG}, ${groundB})`;
+            ctx.fillRect(0, canvas.height * 0.85, canvas.width, canvas.height * 0.15);
+            
+            // Draw celestial body with smooth fade
+            ctx.font = '60px Arial';
+            
+            // Draw sun with fade out
+            ctx.save();
+            ctx.globalAlpha = 1 - transitionProgress; // Fade out as night approaches
+            ctx.fillText('☀️', sun.x, sun.y);
+            ctx.restore();
+            
+            // Draw moon with fade in
+            ctx.save();
+            ctx.globalAlpha = transitionProgress; // Fade in as night approaches
+            ctx.fillText('🌙', sun.x, sun.y);
+            ctx.restore();
+            
+            clouds.forEach(c => {
+                ctx.font = `${c.size}px Arial`;
+                ctx.fillText('☁️', c.x, c.y);
+            });
+            
+            trees.forEach(t => {
+                // Don't draw destroyed trees
+                if (!destroyedTrees.includes(t)) {
+                    drawTree(t, groundBird && groundBird.treeRef === t);
+                }
+            });
+            if (fuelBalloon) drawFuelBalloon(fuelBalloon);
+            airBirds.forEach(drawFlyingBird);
+            
+            // Draw single active bullet
+            if (activeBullet) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(activeBullet.x, activeBullet.y - 1, 10, 2);
+            }
+            
+            // Draw plane BEFORE explosion so explosion is on top
+            drawPlane();
+            
+            // Draw explosion AFTER plane so it's visible on top
+            if (explosion) {
+                drawExplosion(explosion);
+            }
+            
+            // Update
+            if (gameRunning) {
+                updatePlayer();
+                update();
+                spawnAirBird();
+                spawnGroundBird();
+                spawnFuelBalloon();
+            }
+            
+            // Update explosion animation even when game over
+            if (explosion) {
+                explosion.frame++;
+                if (explosion.frame > 30) {
+                    explosion = null;
+                }
+            }
+            
+            // UI
+            document.getElementById('score').textContent = score;
+            
+            // Fuel display - blink when at 0%
+            const fuelElement = document.getElementById('fuel');
+            const fuelValue = Math.max(0, Math.floor(fuel));
+            fuelElement.textContent = fuelValue;
+            
+            // Blink fuel display when at 0
+            if (fuel <= 0 && Math.floor(frameCount / 15) % 2 === 0) {
+                fuelElement.style.opacity = '0.3';
+            } else {
+                fuelElement.style.opacity = '1';
+            }
+            
+            frameCount++;
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Events
+        window.addEventListener('keydown', (e) => {
+            // Close story modal with any key
+            if (document.getElementById('storyModal').style.display === 'block') {
+                closeStory();
+                e.preventDefault();
+                return;
+            }
+            
+            // Start game from title screen
+            if (showTitleScreen && e.key === ' ') {
+                // Resume audio context (required by browsers)
+                audioContext.resume().then(() => {
+                    showTitleScreen = false;
+                    gameRunning = true;
+                    previousHighScore = highscores.length > 0 ? highscores[0].score : 0;
+                    recordBroken = false;
+                    init();
+                    stopTitleMusic(); // Stop title music
+                    playPlaneEngine(); // Start engine sound
+                });
+                e.preventDefault();
+                return;
+            }
+            
+            keys[e.key] = true;
+            if (e.key === ' ') e.preventDefault();
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Touch controls
+        const dpadButtons = document.querySelectorAll('.dpad-btn[data-key]');
+        dpadButtons.forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                // Start game from title screen
+                if (showTitleScreen) {
+                    audioContext.resume().then(() => {
+                        showTitleScreen = false;
+                        gameRunning = true;
+                        previousHighScore = highscores.length > 0 ? highscores[0].score : 0;
+                        recordBroken = false;
+                        init();
+                        stopTitleMusic(); // Stop title music
+                        playPlaneEngine(); // Start engine sound
+                    });
+                    return;
+                }
+                const key = btn.getAttribute('data-key');
+                keys[key] = true;
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const key = btn.getAttribute('data-key');
+                keys[key] = false;
+            });
+            btn.addEventListener('touchcancel', (e) => {
+                const key = btn.getAttribute('data-key');
+                keys[key] = false;
+            });
+        });
+        
+        // Fire button
+        const fireBtn = document.getElementById('fireBtn');
+        fireBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            // Start game from title screen
+            if (showTitleScreen) {
+                audioContext.resume().then(() => {
+                    showTitleScreen = false;
+                    gameRunning = true;
+                    previousHighScore = highscores.length > 0 ? highscores[0].score : 0;
+                    recordBroken = false;
+                    init();
+                    stopTitleMusic(); // Stop title music
+                    playPlaneEngine(); // Start engine sound
+                });
+                return;
+            }
+            keys[' '] = true;
+        });
+        fireBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys[' '] = false;
+        });
+        fireBtn.addEventListener('touchcancel', (e) => {
+            keys[' '] = false;
+        });
+        
+        // Start
+        init();
+        gameLoop();
+    </script>
+</body>
+</html>
